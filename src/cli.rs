@@ -6,7 +6,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 #[command(
     name = "windows-cleaner",
     version,
-    about = "Delete configured paths, or move files/directories and create symlinks back to original locations"
+    about = "Delete configured paths, or move files / directories and create symlinks back to original locations"
 )]
 pub(crate) struct Cli {
     #[command(subcommand)]
@@ -56,7 +56,7 @@ pub(crate) struct Cli {
 
     #[arg(
         long,
-        help = "Delete mode only: attempt permission repair with takeown/icacls when access is denied"
+        help = "Delete mode only: attempt permission repair with takeown / icacls when access is denied"
     )]
     pub(crate) repair_permissions: bool,
 }

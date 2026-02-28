@@ -757,7 +757,7 @@ pub(crate) fn print_summary(outcome: &RunOutcome, dry_run: bool) {
 
     if !outcome.failures.is_empty() {
         println!();
-        println!("Skipped/Failed entries:");
+        println!("Skipped / Failed entries:");
         for failure in &outcome.failures {
             match failure.os_code {
                 Some(code) => println!(
