@@ -520,8 +520,7 @@ where
         }
     }
 
-    Err(io::Error::new(
-        ErrorKind::Other,
+    Err(io::Error::other(
         "delete retry loop terminated unexpectedly",
     ))
 }
@@ -650,6 +649,7 @@ fn clear_readonly_recursive(path: &Path) -> io::Result<()> {
     Ok(())
 }
 
+#[allow(clippy::permissions_set_readonly_false)]
 fn clear_readonly_with_metadata(path: &Path, metadata: &fs::Metadata) -> io::Result<()> {
     let mut permissions = metadata.permissions();
     if permissions.readonly() {
@@ -679,14 +679,14 @@ fn collect_path_details(path: &Path) -> String {
             {
                 let attrs = metadata.file_attributes();
                 let flags = format_windows_attribute_flags(attrs);
-                return format!(
+                format!(
                     "exists=true kind={kind} readonly={readonly} attrs=0x{attrs:08X} flags={flags}"
-                );
+                )
             }
 
             #[cfg(not(windows))]
             {
-                return format!("exists=true kind={kind} readonly={readonly}");
+                format!("exists=true kind={kind} readonly={readonly}")
             }
         }
         Err(err) => format!("exists=false metadata_error={err}"),
