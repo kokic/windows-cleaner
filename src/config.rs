@@ -25,7 +25,7 @@ pub(crate) fn write_template_config(path: &Path, force: bool) -> Result<()> {
         );
     }
 
-    let template = r#"# Used by `move-link` when --target-dir is not provided.
+    let template = r#"# Used by `move` and `move-link` when --target-dir is not provided.
 move_target_dir = "D:\\archive"
 
 # Used by delete mode when --path is not provided.

@@ -2,6 +2,7 @@ mod cli;
 mod config;
 mod delete;
 mod logging;
+mod move_cmd;
 mod move_link;
 
 use std::process;
@@ -43,6 +44,23 @@ fn main() {
             } => match move_link::run_move_link(&cli, sources, target_dir) {
                 Ok(outcome) => {
                     move_link::print_move_summary(&outcome, cli.dry_run);
+                    if outcome.failed > 0 {
+                        process::exit(1);
+                    }
+                    process::exit(0);
+                }
+                Err(err) => {
+                    eprintln!("Fatal: {err:#}");
+                    process::exit(2);
+                }
+            },
+            AppCommand::Move {
+                sources,
+                target_dir,
+                mt,
+            } => match move_cmd::run_move(&cli, sources, target_dir, mt) {
+                Ok(outcome) => {
+                    move_cmd::print_move_summary(&outcome, cli.dry_run);
                     if outcome.failed > 0 {
                         process::exit(1);
                     }
@@ -209,6 +227,35 @@ paths = [
                 assert_eq!(target_dir, Some(PathBuf::from("E:\\dest")));
             }
             _ => panic!("expected move-link command"),
+        }
+    }
+
+    #[test]
+    fn parse_move_command() {
+        let cli = Cli::try_parse_from([
+            "windows-cleaner",
+            "move",
+            "--source",
+            "C:\\a.txt",
+            "--source",
+            "D:\\folder",
+            "--target-dir",
+            "E:\\dest",
+            "--mt",
+            "16",
+        ])
+        .expect("cli args should parse");
+        match cli.command {
+            Some(AppCommand::Move {
+                sources,
+                target_dir,
+                mt,
+            }) => {
+                assert_eq!(sources.len(), 2);
+                assert_eq!(target_dir, Some(PathBuf::from("E:\\dest")));
+                assert_eq!(mt, Some(16));
+            }
+            _ => panic!("expected move command"),
         }
     }
 

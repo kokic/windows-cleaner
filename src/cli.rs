@@ -6,7 +6,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 #[command(
     name = "windows-cleaner",
     version,
-    about = "Delete configured paths, or move files / directories and create symlinks back to original locations"
+    about = "Delete configured paths, move paths with Windows native commands, or move and create symlinks back to original locations"
 )]
 pub(crate) struct Cli {
     #[command(subcommand)]
@@ -17,7 +17,7 @@ pub(crate) struct Cli {
         long,
         value_name = "FILE",
         default_value = "cleaner.toml",
-        help = "Path to TOML config file (used by delete mode and move-link fallback settings)"
+        help = "Path to TOML config file (used by delete mode and move/move-link fallback settings)"
     )]
     pub(crate) config: PathBuf,
 
@@ -62,8 +62,13 @@ pub(crate) struct Cli {
 }
 
 #[derive(Debug, Clone, Subcommand)]
+/// Supported command modes for `wmc`.
 pub(crate) enum AppCommand {
-    #[command(visible_alias = "i")]
+    /// Generate a template TOML config file.
+    #[command(
+        visible_alias = "i",
+        about = "Generate a template TOML config file for delete/move settings"
+    )]
     Init {
         #[arg(
             short,
@@ -78,7 +83,11 @@ pub(crate) enum AppCommand {
         force: bool,
     },
 
-    #[command(visible_alias = "m")]
+    /// Move paths and create symlinks back to the original locations.
+    #[command(
+        visible_alias = "m",
+        about = "Move files/directories and create symlinks at original paths"
+    )]
     MoveLink {
         #[arg(
             short = 's',
@@ -96,6 +105,35 @@ pub(crate) enum AppCommand {
             help = "Destination directory. If omitted, uses move_target_dir from config"
         )]
         target_dir: Option<PathBuf>,
+    },
+
+    /// Move paths with Windows native commands (without creating symlinks).
+    #[command(about = "Move files/directories using cmd move + robocopy (Windows only)")]
+    Move {
+        #[arg(
+            short = 's',
+            long = "source",
+            value_name = "PATH",
+            required = true,
+            help = "Source file or directory path. Repeat to move multiple entries"
+        )]
+        sources: Vec<PathBuf>,
+
+        #[arg(
+            short = 'd',
+            long = "target-dir",
+            value_name = "DIR",
+            help = "Destination directory. If omitted, uses move_target_dir from config"
+        )]
+        target_dir: Option<PathBuf>,
+
+        #[arg(
+            long,
+            value_name = "N",
+            value_parser = parse_threads,
+            help = "Move mode only: optional robocopy /MT thread count for directory moves (Windows only)"
+        )]
+        mt: Option<usize>,
     },
 }
 
