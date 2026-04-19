@@ -2,8 +2,8 @@ mod cli;
 mod config;
 mod delete;
 mod logging;
-mod move_cmd;
-mod move_link;
+mod rename;
+mod link;
 
 use std::process;
 
@@ -18,7 +18,7 @@ pub(crate) use crate::config::*;
 #[cfg(test)]
 pub(crate) use crate::delete::*;
 #[cfg(test)]
-pub(crate) use crate::move_link::*;
+pub(crate) use crate::link::*;
 
 fn main() {
     logging::init_tracing();
@@ -38,29 +38,28 @@ fn main() {
                     }
                 }
             }
-            AppCommand::MoveLink {
-                sources,
-                target_dir,
-            } => match move_link::run_move_link(&cli, sources, target_dir) {
-                Ok(outcome) => {
-                    move_link::print_move_summary(&outcome, cli.dry_run);
-                    if outcome.failed > 0 {
-                        process::exit(1);
+            AppCommand::MoveLink { source, target_dir } => {
+                match link::run_move_link(&cli, vec![source], Some(target_dir)) {
+                    Ok(outcome) => {
+                        link::print_move_summary(&outcome, cli.dry_run);
+                        if outcome.failed > 0 {
+                            process::exit(1);
+                        }
+                        process::exit(0);
                     }
-                    process::exit(0);
+                    Err(err) => {
+                        eprintln!("Fatal: {err:#}");
+                        process::exit(2);
+                    }
                 }
-                Err(err) => {
-                    eprintln!("Fatal: {err:#}");
-                    process::exit(2);
-                }
-            },
+            }
             AppCommand::Move {
-                sources,
+                source,
                 target_dir,
                 mt,
-            } => match move_cmd::run_move(&cli, sources, target_dir, mt) {
+            } => match rename::run_move(&cli, vec![source], Some(target_dir), mt) {
                 Ok(outcome) => {
-                    move_cmd::print_move_summary(&outcome, cli.dry_run);
+                    rename::print_move_summary(&outcome, cli.dry_run);
                     if outcome.failed > 0 {
                         process::exit(1);
                     }
@@ -207,24 +206,12 @@ paths = [
 
     #[test]
     fn parse_move_link_command() {
-        let cli = Cli::try_parse_from([
-            "windows-cleaner",
-            "move-link",
-            "--source",
-            "C:\\a.txt",
-            "--source",
-            "D:\\b.txt",
-            "--target-dir",
-            "E:\\dest",
-        ])
-        .expect("cli args should parse");
+        let cli = Cli::try_parse_from(["windows-cleaner", "move-link", "C:\\a.txt", "E:\\dest"])
+            .expect("cli args should parse");
         match cli.command {
-            Some(AppCommand::MoveLink {
-                sources,
-                target_dir,
-            }) => {
-                assert_eq!(sources.len(), 2);
-                assert_eq!(target_dir, Some(PathBuf::from("E:\\dest")));
+            Some(AppCommand::MoveLink { source, target_dir }) => {
+                assert_eq!(source, PathBuf::from("C:\\a.txt"));
+                assert_eq!(target_dir, PathBuf::from("E:\\dest"));
             }
             _ => panic!("expected move-link command"),
         }
@@ -235,11 +222,7 @@ paths = [
         let cli = Cli::try_parse_from([
             "windows-cleaner",
             "move",
-            "--source",
             "C:\\a.txt",
-            "--source",
-            "D:\\folder",
-            "--target-dir",
             "E:\\dest",
             "--mt",
             "16",
@@ -247,16 +230,63 @@ paths = [
         .expect("cli args should parse");
         match cli.command {
             Some(AppCommand::Move {
-                sources,
+                source,
                 target_dir,
                 mt,
             }) => {
-                assert_eq!(sources.len(), 2);
-                assert_eq!(target_dir, Some(PathBuf::from("E:\\dest")));
+                assert_eq!(source, PathBuf::from("C:\\a.txt"));
+                assert_eq!(target_dir, PathBuf::from("E:\\dest"));
                 assert_eq!(mt, Some(16));
             }
             _ => panic!("expected move command"),
         }
+    }
+
+    #[test]
+    fn parse_move_link_alias_command() {
+        let cli = Cli::try_parse_from(["windows-cleaner", "ml", "C:\\a.txt", "E:\\dest"])
+            .expect("cli args should parse");
+        assert!(matches!(cli.command, Some(AppCommand::MoveLink { .. })));
+    }
+
+    #[test]
+    fn parse_move_alias_command() {
+        let cli = Cli::try_parse_from([
+            "windows-cleaner",
+            "m",
+            "C:\\a.txt",
+            "E:\\dest",
+            "--mt",
+            "16",
+        ])
+        .expect("cli args should parse");
+        assert!(matches!(cli.command, Some(AppCommand::Move { .. })));
+    }
+
+    #[test]
+    fn old_move_link_flag_syntax_is_rejected() {
+        let cli = Cli::try_parse_from([
+            "windows-cleaner",
+            "move-link",
+            "--source",
+            "C:\\a.txt",
+            "--target-dir",
+            "E:\\dest",
+        ]);
+        assert!(cli.is_err());
+    }
+
+    #[test]
+    fn old_move_flag_syntax_is_rejected() {
+        let cli = Cli::try_parse_from([
+            "windows-cleaner",
+            "move",
+            "--source",
+            "C:\\a.txt",
+            "--target-dir",
+            "E:\\dest",
+        ]);
+        assert!(cli.is_err());
     }
 
     #[test]

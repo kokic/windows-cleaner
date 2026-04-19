@@ -85,47 +85,28 @@ pub(crate) enum AppCommand {
 
     /// Move paths and create symlinks back to the original locations.
     #[command(
-        visible_alias = "m",
+        visible_alias = "ml",
         about = "Move files/directories and create symlinks at original paths"
     )]
     MoveLink {
-        #[arg(
-            short = 's',
-            long = "source",
-            value_name = "PATH",
-            required = true,
-            help = "Source file or directory path. Repeat to move multiple entries"
-        )]
-        sources: Vec<PathBuf>,
+        #[arg(value_name = "SOURCE_PATH", help = "Source file or directory path")]
+        source: PathBuf,
 
-        #[arg(
-            short = 'd',
-            long = "target-dir",
-            value_name = "DIR",
-            help = "Destination directory. If omitted, uses move_target_dir from config"
-        )]
-        target_dir: Option<PathBuf>,
+        #[arg(value_name = "TARGET_DIR", help = "Destination directory path")]
+        target_dir: PathBuf,
     },
 
     /// Move paths with Windows native commands (without creating symlinks).
-    #[command(about = "Move files/directories using cmd move + robocopy (Windows only)")]
+    #[command(
+        visible_alias = "m",
+        about = "Move files/directories using cmd move + robocopy (Windows only)"
+    )]
     Move {
-        #[arg(
-            short = 's',
-            long = "source",
-            value_name = "PATH",
-            required = true,
-            help = "Source file or directory path. Repeat to move multiple entries"
-        )]
-        sources: Vec<PathBuf>,
+        #[arg(value_name = "SOURCE_PATH", help = "Source file or directory path")]
+        source: PathBuf,
 
-        #[arg(
-            short = 'd',
-            long = "target-dir",
-            value_name = "DIR",
-            help = "Destination directory. If omitted, uses move_target_dir from config"
-        )]
-        target_dir: Option<PathBuf>,
+        #[arg(value_name = "TARGET_DIR", help = "Destination directory path")]
+        target_dir: PathBuf,
 
         #[arg(
             long,

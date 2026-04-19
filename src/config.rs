@@ -25,7 +25,7 @@ pub(crate) fn write_template_config(path: &Path, force: bool) -> Result<()> {
         );
     }
 
-    let template = r#"# Used by `move` and `move-link` when --target-dir is not provided.
+    let template = r#"# Used by `move` and `move-link` when the target directory argument is not provided.
 move_target_dir = "D:\\archive"
 
 # Used by delete mode when --path is not provided.
@@ -75,7 +75,7 @@ pub(crate) fn resolve_move_target_dir(
     match config.move_target_dir {
         Some(dir) if !dir.as_os_str().is_empty() => Ok(dir),
         _ => Err(anyhow!(
-            "move target directory is not set; pass --target-dir or add move_target_dir to config"
+            "move target directory is not set; pass a target directory argument or add move_target_dir to config"
         )),
     }
 }
